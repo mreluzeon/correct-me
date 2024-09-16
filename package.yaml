@@ -1,7 +1,7 @@
 name:                correct-me
 version:             0.1.0.0
 github:              "mreluzeon/correct-me"
-license:             GNU-GPLv3
+license:             GPL-3.0-or-later
 author:              "Leonid Konontsov"
 maintainer:          "me@nokono.ru"
 copyright:           "2024 Konontsov Leonid"
@@ -21,6 +21,19 @@ description:         Please see the README on GitHub at <https://github.com/mrel
 
 dependencies:
 - base >= 4.7 && < 5
+- servant
+- servant-server
+- servant-auth-server
+- servant-auth
+- http-media
+- text
+- containers
+- bytestring
+- time
+- warp
+- http-api-data
+- hasql
+- aeson
 
 ghc-options:
 - -Wall
