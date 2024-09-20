@@ -34,6 +34,7 @@ dependencies:
 - http-api-data
 - hasql
 - aeson
+# - servant-ede
 
 ghc-options:
 - -Wall

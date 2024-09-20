@@ -12,8 +12,8 @@ import GHC.Generics
 import Web.FormUrlEncoded (FromForm)
 import Servant.Auth.Server
 
-data LoginForm = LoginForm { login :: !Text, password :: !Text }
-  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON, FromForm)
+data LoginReq = LoginReq { login :: Text, password :: Text }
+  deriving (Eq, Show, Read, Generic, ToJSON, FromJSON)
 
 data User = User
   { userId :: Int
@@ -24,6 +24,18 @@ data User = User
 
 instance FromJWT User
 instance ToJWT User
+
+data PhraseReq = PhraseReq { phrase :: Text }
+  deriving (Eq, Show, Generic, Read, ToJSON, FromJSON)
+
+data WordingReq = WordingReq { wording :: Text, parentPhraseId :: Int }
+  deriving (Eq, Show, Generic, Read, ToJSON, FromJSON)
+
+data WordingIdReq = WordingIdReq { wordingIdReq :: Int }
+  deriving (Eq, Show, Generic, Read, ToJSON, FromJSON)
+
+data RespError = RespError { respErrorText :: String }
+  deriving (Eq, Show, Generic, Read, ToJSON, FromJSON)
 
 nullUser :: User
 nullUser = User (-1) "" "" ""

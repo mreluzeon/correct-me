@@ -40,7 +40,9 @@ packages:
 # - git: https://github.com/commercialhaskell/stack.git
 #   commit: e7b331f14bcffb8367cd58fbfc8b40ec7642100a
 #
-# extra-deps: []
+extra-deps: []
+  # - servant-ede-0.6@sha256:02c87edd93e0f148530c40c2da4265f9b92bc065bdd2f2aeabdd4c8ff297a6a1,1597
+  # - ede-0.3.3.0@sha256:25e4aed76d0ce689a30a4182587a2c6d3930311d452e6ee03a5b201b5a5763ec,3914
 
 # Override default flag values for project packages and extra-deps
 # flags: {}
