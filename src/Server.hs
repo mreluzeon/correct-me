@@ -56,17 +56,17 @@ type ProtectedAPI =
                            :> Post '[JSON] (Either RespError Int)
 
   :<|> "postWording"       :> ReqBody '[JSON] WordingReq
-                           :> Post '[JSON] Wording
+                           :> Post '[JSON] (Either RespError Int)
 
   :<|> "getPhrases"        :> QueryFlag "showMy"
                            :> QueryFlag "showApproved"
                            :> Get '[JSON] [Phrase]
 
   :<|> "getWordings"       :> Capture "phraseId" Int
-                           :> Get '[JSON] (Phrase, [Wording])
+                           :> Get '[JSON] (Maybe Phrase, [Wording])
 
   :<|> "toggleWording"    :> ReqBody '[JSON] WordingIdReq
-                           :> Put '[JSON] Wording
+                           :> Put '[JSON] (Either RespError Wording)
 
 protected :: Connection -> AuthResult User -> Server ProtectedAPI
 protected con (Authenticated user) =
@@ -78,23 +78,32 @@ protected con (Authenticated user) =
 protected _ _ = throwAll err401
 
 postPhraseHandler :: Connection -> User -> PhraseReq -> Handler (Either RespError Int)
-postPhraseHandler con user (PhraseReq text) = do
-  eth <- liftIO $ insertPhrase con (toEnum $ userId user, text)
-  case eth of
-    (Left err) -> return $ Left $ RespError $ show err
-    (Right amt) -> return $ Right $ fromIntegral amt
+postPhraseHandler con user (PhraseReq text) =
+  liftIO (insertPhrase con (toEnum $ userId user, text))
+  >>= (return . either (Left . RespError . show) (Right . fromIntegral))
 
-postWordingHandler :: Connection -> User -> WordingReq -> Handler Wording
-postWordingHandler = undefined
+postWordingHandler :: Connection -> User -> WordingReq -> Handler (Either RespError Int)
+postWordingHandler con user (WordingReq text phrId) =
+  liftIO (insertWording con (toEnum phrId, toEnum $ userId user, text))
+  >>= (return . either (Left . RespError . show) (Right . fromIntegral))
 
 getPhrasesHandler :: Connection -> User -> Bool -> Bool -> Handler [Phrase]
-getPhrasesHandler = undefined
+getPhrasesHandler con user isGetApproved isGetMine =
+  liftIO $ getPhrases con (toEnum $ userId user, isGetApproved, isGetMine)
 
-getWordingsHandler :: Connection -> User -> Int -> Handler (Phrase, [Wording])
-getWordingsHandler = undefined
+getWordingsHandler :: Connection -> User -> Int -> Handler (Maybe Phrase, [Wording])
+getWordingsHandler con user phraseId = do
+  phrase <- liftIO $ getPhrase con $ toEnum phraseId
+  wording <- liftIO $ getWordings con $ toEnum phraseId
+  return (phrase, wording)
 
-toggleWordingHandler :: Connection -> User -> WordingIdReq -> Handler Wording
-toggleWordingHandler = undefined
+toggleWordingHandler :: Connection -> User -> WordingIdReq -> Handler (Either RespError Wording)
+toggleWordingHandler con user (WordingIdReq wordingIdNow) = do
+  result <- liftIO $ toggleWording con (toEnum wordingIdNow, toEnum $ userId user)
+  wording <- liftIO $ getWording con $ toEnum wordingIdNow
+  case result of
+    (Left err) -> return $ Left $ RespError $ show err
+    (Right _) -> return $ Right $ fromMaybe nullWording wording
 
 type ApplicationAPI auth = (Auth auth User :> ProtectedAPI) :<|> PublicAPI
 

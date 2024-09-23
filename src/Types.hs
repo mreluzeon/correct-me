@@ -57,4 +57,5 @@ data Wording = Wording
   , wordingCreationDate :: UTCTime
   } deriving (Eq, Show, ToJSON, FromJSON, Generic)
 
-
+nullWording :: Wording
+nullWording = Wording (-1) "" (-1) (-1) False (UTCTime (toEnum 0) (toEnum 0))

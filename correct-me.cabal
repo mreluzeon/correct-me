@@ -29,6 +29,7 @@ library
       Lib
       Server
       Types
+      Utils
   other-modules:
       Paths_correct_me
   autogen-modules:

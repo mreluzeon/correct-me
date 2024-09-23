@@ -134,6 +134,23 @@ getWordings con phrasid = do
   where
     session = Ses.statement phrasid getWordingsStatement
 
+getWordingStatement :: St.Statement Int64 (Maybe Wording)
+getWordingStatement = St.Statement sql encoder (Dec.rowMaybe wordingDecoder) False
+  where
+    sql = "select * \
+           \ from public.\"Wordings\" \
+           \ where wording_id = $1"
+    encoder = Enc.param (Enc.nonNullable Enc.int8)
+
+getWording :: Con.Connection -> Int64 -> IO (Maybe Wording)
+getWording con wordingId = do
+  eitherWording <- Ses.run session con
+  case eitherWording of
+    (Left e) -> (putStrLn $ show e) >> return Nothing
+    (Right wording) -> return wording
+  where
+    session = Ses.statement wordingId getWordingStatement
+
 insertPhraseStatement :: St.Statement (Int64, Text) Int64
 insertPhraseStatement = St.Statement sql encoder Dec.rowsAffected False
   where
@@ -152,7 +169,8 @@ insertWordingStatement :: St.Statement (Int64, Int64, Text) Int64
 insertWordingStatement = St.Statement sql encoder Dec.rowsAffected False
   where
     sql = "insert into public.\"Wordings\" \
-           \ (phrase_id, author_id, wording)"
+           \ (phrase_id, author_id, wording) \
+           \ values ($1, $2, $3)"
     encoder = (fst3 >$< Enc.param (Enc.nonNullable Enc.int8))
            <> (scd3 >$< Enc.param (Enc.nonNullable Enc.int8))
            <> (thd3 >$< Enc.param (Enc.nonNullable Enc.text))
@@ -162,15 +180,19 @@ insertWording con params = Ses.run session con
   where
     session = Ses.statement params insertWordingStatement
 
-toggleWordingStatement :: St.Statement Int64 Int64
+toggleWordingStatement :: St.Statement (Int64, Int64) Int64
 toggleWordingStatement = St.Statement sql encoder Dec.rowsAffected False
   where
-    sql = "update public.\"Wordings\" \
+    sql = "update public.\"Wordings\" w \
            \ set is_approved = not is_approved \
-           \ where wording_id = $1"
-    encoder = Enc.param (Enc.nonNullable Enc.int8)
+           \ where wording_id = $1 and \
+           \    (select p.author_id \
+           \     from public.\"Phrases\" p \
+           \     where p.phrase_id = w.phrase_id limit 1) = $2"
+    encoder = (fst >$< Enc.param (Enc.nonNullable Enc.int8))
+           <> (snd >$< Enc.param (Enc.nonNullable Enc.int8))
 
-toggleWording :: Con.Connection -> Int64 -> IO (Either Ses.QueryError Int64)
-toggleWording con param = Ses.run session con
+toggleWording :: Con.Connection -> (Int64, Int64) -> IO (Either Ses.QueryError Int64)
+toggleWording con params = Ses.run session con
   where
-    session = Ses.statement param toggleWordingStatement
+    session = Ses.statement params toggleWordingStatement
